@@ -38,9 +38,16 @@ export function mockGameStateInitOpts(
 ): GameStateOpts {
   const deck = getFixedMarsEventDeck();
   const numberOfGameRounds = nRoundStrategy();
-  const userRoles = _.zipObject([1, 2, 3, 4, 5].map(n => `${username}${n}`), ROLES);
+  const usernames = [1, 2, 3, 4, 5].map(n => `${username}${n}`);
+  const userData = usernames.map((username, i) => ({
+    role: ROLES[i],
+    isBot: false
+  }));
   return {
-    userRoles,
+    playerOpts: {
+      users: _.zipObject(usernames, userData),
+      lookup: _.zipObject(ROLES, usernames),
+    },
     deck,
     numberOfGameRounds
   };
@@ -54,27 +61,27 @@ export async function mockGameInitOpts(): Promise<GameOpts> {
   };
 }
 
-export async function buildGameOpts(usernames?: Array<string>): Promise<GameOpts> {
+export async function buildGameOpts(usernames: Array<string>): Promise<GameOpts> {
   const currentTournamentRound = await getServices().tournament.getCurrentTournamentRound();
-  if (usernames) {
-    assert.equal(usernames.length, ROLES.length);
-    logger.info("building game opts with current tournament round [%d]", currentTournamentRound.id);
-    return {
-      userRoles: _.zipObject(usernames, ROLES),
-      deck: getRandomizedMarsEventDeck(),
-      numberOfGameRounds: currentTournamentRound.numberOfGameRounds,
-      tournamentRoundId: currentTournamentRound.id,
-    };
-  } else {
-    // FIXME: explain this branch path
-    return {
-      userRoles: {},
-      deck: getFixedMarsEventDeck(),
-      numberOfGameRounds: currentTournamentRound.numberOfGameRounds,
-      tournamentRoundId: currentTournamentRound.id
-    }
+  const bots: Array<boolean> = [];
+  for (const username of usernames) {
+    bots.push((await getServices().account.findByUsername(username)).isBot);  
   }
-
+  const userData = usernames.map((username, i) => ({
+    role: ROLES[i],
+    isBot: bots[i]
+  }));
+  assert.equal(usernames.length, ROLES.length);
+  logger.info("building game opts with current tournament round [%d]", currentTournamentRound.id);
+  return {
+    playerOpts: {
+      users: _.zipObject(usernames, userData),
+      lookup: _.zipObject(ROLES, usernames),
+    },
+    deck: getRandomizedMarsEventDeck(),
+    numberOfGameRounds: currentTournamentRound.numberOfGameRounds,
+    tournamentRoundId: currentTournamentRound.id,
+  };
 }
 
 export interface ServerErrorData {

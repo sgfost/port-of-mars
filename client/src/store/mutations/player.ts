@@ -7,8 +7,18 @@ import {
 } from "@port-of-mars/shared/types";
 import { Vue } from "vue-property-decorator";
 
+// sets the user's role
 function SET_PLAYER_ROLE(state: State, payload: Role) {
   state.role = payload;
+}
+
+// sets the role of other players
+function SET_ROLE(state: State, payload: { data: Role; role: Role }) {
+  state.players[payload.role].role = payload.data;
+}
+
+function SET_USERNAME(state: State, payload: { data: string; role: Role }) {
+  state.players[payload.role].username = payload.data;
 }
 
 function SET_READINESS(state: State, payload: { data: boolean; role: Role }) {
@@ -35,10 +45,17 @@ function SET_BOT_WARNING(state: State, payload: { data: boolean, role: Role}) {
   state.players[payload.role].botWarning = payload.data;
 }
 
+function SET_BOT_STATUS(state: State, payload: { data: boolean, role: Role }) {
+  state.players[payload.role].isBot = payload.data;
+}
+
 export default {
   SET_PLAYER_ROLE,
+  SET_ROLE,
+  SET_USERNAME,
   SET_READINESS,
   SET_BOT_WARNING,
+  SET_BOT_STATUS,
   SET_ACCOMPLISHMENTS,
   SET_VICTORY_POINTS,
   SET_PENDING_INVESTMENTS,

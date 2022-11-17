@@ -83,12 +83,14 @@ export class DBPersister implements Persister {
     return rawUsers
   }
 
-  async createPlayers(em: EntityManager, gameId: number, userRoles: GameOpts['userRoles'], rawUsers: Array<User>): Promise<Array<Player>> {
+  async createPlayers(
+    em: EntityManager, gameId: number, users: GameOpts['playerOpts']['users'], rawUsers: Array<User>
+  ): Promise<Array<Player>> {
     const players = [];
     for (const ru of rawUsers) {
       const p = {
         userId: ru.id,
-        role: userRoles[ru.username],
+        role: users[ru.username].role,
         gameId,
         playerIp: ru.lastPlayerIp
       };
@@ -111,8 +113,8 @@ export class DBPersister implements Persister {
 
       await em.save(g);
       if (shouldCreatePlayers) {
-        const rawUsers = await this.selectUsersByUsername(em, Object.keys(options.userRoles));
-        await this.createPlayers(em, g.id, options.userRoles, rawUsers);
+        const rawUsers = await this.selectUsersByUsername(em, Object.keys(options.playerOpts.users));
+        await this.createPlayers(em, g.id, options.playerOpts.users, rawUsers);
       }
 
       return g.id;

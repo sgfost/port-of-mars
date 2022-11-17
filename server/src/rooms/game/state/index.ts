@@ -50,7 +50,7 @@ import {
 } from "@port-of-mars/shared/settings";
 import { settings } from "@port-of-mars/server/settings";
 import { GameEvent } from "@port-of-mars/server/rooms/game/events/types";
-import { GameOpts, GameStateOpts } from "@port-of-mars/server/rooms/game/types";
+import { GameStateOpts } from "@port-of-mars/server/rooms/game/types";
 import MarsEventsDeck from "@port-of-mars/server/rooms/game/state/marsevents/MarsEventDeck";
 import { MarsEvent } from "@port-of-mars/server/rooms/game/state/marsevents/MarsEvent";
 import { SimpleBot } from "@port-of-mars/server/rooms/game/state/bot";
@@ -953,15 +953,17 @@ export class Player
   implements
     PlayerData<AccomplishmentSet, ResourceInventory, SystemHealthChanges>
 {
-  constructor(role: Role, isBot?: boolean) {
+  constructor(role: Role, playerOpts: GameStateOpts["playerOpts"]) {
     super();
     this.role = role;
-    this.bot = SimpleBot.fromActor(this, isBot);
-    this.accomplishments = new AccomplishmentSet(role);
-    this.costs = ResourceCosts.senderRole(role);
+    this.username = playerOpts.lookup[role];
+    this.isBot = playerOpts.users[this.username].isBot;
+    this.bot = SimpleBot.fromActor(this);
+    this.accomplishments = new AccomplishmentSet(this.role);
+    this.costs = ResourceCosts.senderRole(this.role);
     // FIXME: it'd be nice to bind the specialty to the ResourceCosts e.g., this.specialty = this.costs.specialty
     // but this change cascades quite a bit into the client. revisit later
-    this.specialty = ResourceCosts.getSpecialty(role);
+    this.specialty = ResourceCosts.getSpecialty(this.role);
   }
 
   fromJSON(data: PlayerSerialized): Player {
@@ -975,7 +977,7 @@ export class Player
     this.victoryPoints = data.victoryPoints;
     this.inventory.fromJSON(data.inventory);
 
-    // FIXME: mapping the identity function seems pretty pointless, is this just to create a list from data.notifications?
+    // mapping the identity function seems pretty pointless, is this just to create a list from data.notifications?
     // const notifications = _.map(data.notifications, n => n);
     // this.notifications.splice(0, this.notifications.length, ...notifications);
     return this;
@@ -1003,6 +1005,12 @@ export class Player
 
   @type("string")
   role: Role;
+
+  @type("string")
+  username: string;
+
+  @type("boolean")
+  isBot: boolean;
 
   @type(ResourceCosts)
   costs: ResourceCosts;
@@ -1215,15 +1223,18 @@ export class Player
 type PlayerSetSerialized = { [role in Role]: PlayerSerialized };
 
 class PlayerSet extends Schema implements PlayerSetData<Player> {
-  constructor(botRoles?: Map<Role, boolean>) {
+  constructor(playerOpts: GameStateOpts["playerOpts"]) {
     super();
     // FIXME: should be able to reduce the duplication here of Roles, lookups into the botRoles, etc.
     // clean up when we get time for a refactor pass
-    this.Curator = new Player(CURATOR, botRoles?.get(CURATOR));
-    this.Entrepreneur = new Player(ENTREPRENEUR, botRoles?.get(ENTREPRENEUR));
-    this.Pioneer = new Player(PIONEER, botRoles?.get(PIONEER));
-    this.Politician = new Player(POLITICIAN, botRoles?.get(POLITICIAN));
-    this.Researcher = new Player(RESEARCHER, botRoles?.get(RESEARCHER));
+    //
+    // could use something like https://docs.colyseus.io/colyseus/state/schema/#setschema but
+    // keeping things as they are for now to avoid breaking anything
+    this.Curator = new Player(CURATOR, playerOpts)
+    this.Entrepreneur = new Player(ENTREPRENEUR, playerOpts)
+    this.Pioneer = new Player(PIONEER, playerOpts)
+    this.Politician = new Player(POLITICIAN, playerOpts)
+    this.Researcher = new Player(RESEARCHER, playerOpts)
   }
 
   @type(Player)
@@ -1276,7 +1287,6 @@ class PlayerSet extends Schema implements PlayerSetData<Player> {
 
 export interface GameSerialized {
   players: PlayerSetSerialized;
-  userRoles: { [username: string]: Role };
   maxRound: number;
   lastTimePolled: number;
   timeRemaining: number;
@@ -1322,7 +1332,7 @@ export class GameState
       Map<string, Trade>
     >
 {
-  userRoles: GameOpts["userRoles"] = {};
+  playerOpts: GameStateOpts["playerOpts"];
   gameId!: number;
   maxRound: number;
   lastTimePolled: Date;
@@ -1374,20 +1384,20 @@ export class GameState
   @type("string")
   heroOrPariah: "" | "hero" | "pariah" = "";
 
-  constructor(data: GameStateOpts, botRoles?: Map<Role, boolean>) {
+  constructor(data: GameStateOpts) {
     super();
-    if (isProduction() && data.userRoles) {
+    if (isProduction() && data.playerOpts.users) {
       assert.equal(
-        Object.keys(data.userRoles).length,
+        Object.keys(data.playerOpts.users).length,
         ROLES.length,
         "Must have five players"
       );
     }
-    this.userRoles = data.userRoles;
+    this.playerOpts = data.playerOpts;
     this.marsEventDeck = new MarsEventsDeck(data.deck);
     this.lastTimePolled = new Date();
     this.maxRound = data.numberOfGameRounds;
-    this.players = new PlayerSet(botRoles);
+    this.players = new PlayerSet(this.playerOpts);
   }
 
   static DEFAULTS = {
@@ -1412,7 +1422,6 @@ export class GameState
 
   fromJSON(data: GameSerialized): GameState {
     this.players.fromJSON(data.players);
-    this.userRoles = data.userRoles;
     this.maxRound = data.maxRound;
     this.lastTimePolled = new Date(data.lastTimePolled);
     this.botWarning = data.botWarning;
@@ -1453,7 +1462,6 @@ export class GameState
   toJSON(): GameSerialized {
     return {
       players: this.players.toJSON(),
-      userRoles: this.userRoles,
       maxRound: this.maxRound,
       lastTimePolled: this.lastTimePolled.getTime(),
       botWarning: this.botWarning,
@@ -1504,7 +1512,7 @@ export class GameState
 
   getPlayer(username: string): Player {
     if (this.hasUser(username)) {
-      return this.players[this.userRoles[username]];
+      return this.players[this.playerOpts.users[username].role];
     }
     logger.fatal(
       "GameState.getPlayer: Unable to find player with username",
@@ -1528,7 +1536,7 @@ export class GameState
 
   hasUser(username: string | undefined): boolean {
     if (username) {
-      return Object.keys(this.userRoles).includes(username);
+      return Object.keys(this.playerOpts.users).includes(username);
     }
     return false;
   }
@@ -1622,7 +1630,7 @@ export class GameState
     this.logs.splice(0, this.logs.length);
     this.marsEvents.splice(0, this.marsEvents.length);
     this.messages.splice(0, this.messages.length);
-    this.players.fromJSON(new PlayerSet().toJSON());
+    this.players.fromJSON(new PlayerSet(this.playerOpts).toJSON());
     this.marsEventDeck = new MarsEventsDeck(_.shuffle(this.marsEventDeck.deck));
     this.winners.splice(0, this.winners.length);
     this.heroOrPariah = "";

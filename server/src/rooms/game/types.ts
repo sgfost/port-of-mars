@@ -29,9 +29,19 @@ export interface GameOpts extends GameStateOpts {
 }
 
 export interface GameStateOpts {
-  userRoles: { [username: string]: Role };
+  playerOpts: PlayerOpts;
   deck: Array<MarsEventData>;
   numberOfGameRounds: number;
+}
+
+export interface PlayerOpts {
+  // map usernames to role and whether they are a bot
+  users: { [username: string]: {
+    role: Role;
+    isBot: boolean;
+  }};
+  // map roles to usernames
+  lookup: { [role: string]: string }
 }
 
 export type Metadata = Pick<GameEvent, 'dateCreated' | 'timeRemaining' | 'gameId'>

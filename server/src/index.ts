@@ -49,53 +49,59 @@ const sessionParser = session({
   store,
 });
 
-passport.use(new GoogleStrategy({
-    clientID: settings.googleAuth.clientId,
-    clientSecret: settings.googleAuth.clientSecret,
-    callbackURL: `${settings.serverHost}/auth/google/callback`,
-    passReqToCallback: true
-  },
-  async function(request:any, accessToken:any, refreshToken:any, profile:any, done:any) {
-    const services = getServices();
-    const user = await services.account.getOrCreateUser(profile.id, profile.emails[0].value);
-    // const user = await s.account.getOrCreateUser()
-    return done(null, user);
-  }
-));
+if (settings.googleAuth.clientId && settings.googleAuth.clientSecret) {
+  passport.use(new GoogleStrategy({
+      clientID: settings.googleAuth.clientId,
+      clientSecret: settings.googleAuth.clientSecret,
+      callbackURL: `${settings.serverHost}/auth/google/callback`,
+      passReqToCallback: true
+    },
+    async function(request:any, accessToken:any, refreshToken:any, profile:any, done:any) {
+      const services = getServices();
+      const user = await services.account.getOrCreateUser(profile.id, profile.emails[0].value);
+      // const user = await s.account.getOrCreateUser()
+      return done(null, user);
+    }
+  ));
+}
 
-passport.use(new FacebookStrategy({
-    clientID: settings.facebookAuth.clientId,
-    clientSecret: settings.facebookAuth.clientSecret,
-    callbackURL: `${settings.serverHost}/auth/facebook/callback`,
-    profileFields: ["id", "email"],
-    passReqToCallback: true
-  },
-  async function(request:any, accessToken:any, refreshToken:any, profile:any, done:any) {
-    const services = getServices();
-    const user = await services.account.getOrCreateUser(profile.id, profile.emails[0].value);
-    // const user = await s.account.getOrCreateUser()
-    return done(null, user);
-  }
-));
+if (settings.facebookAuth.clientId && settings.facebookAuth.clientSecret) {
+  passport.use(new FacebookStrategy({
+      clientID: settings.facebookAuth.clientId,
+      clientSecret: settings.facebookAuth.clientSecret,
+      callbackURL: `${settings.serverHost}/auth/facebook/callback`,
+      profileFields: ["id", "email"],
+      passReqToCallback: true
+    },
+    async function(request:any, accessToken:any, refreshToken:any, profile:any, done:any) {
+      const services = getServices();
+      const user = await services.account.getOrCreateUser(profile.id, profile.emails[0].value);
+      // const user = await s.account.getOrCreateUser()
+      return done(null, user);
+    }
+  ));
+}
 
-passport.use(
-  new LocalStrategy(async function (
-    username: string,
-    password: string,
-    done: Function
-  ) {
-    const services = getServices();
-    const user = await services.account.getOrCreateTestUser(username);
-    // set all testing things on the user
-    // const tournamentRound = await services.tournament.getCurrentTournamentRound();
-    // const invite = await services.tournament.getOrCreateInvite(
-    //   user.id,
-    //   tournamentRound,
-    //   true
-    // );
-    await done(null, user);
-  })
-);
+if (isDev()) {
+  passport.use(
+    new LocalStrategy(async function (
+      username: string,
+      password: string,
+      done: Function
+    ) {
+      const services = getServices();
+      const user = await services.account.getOrCreateTestUser(username);
+      // set all testing things on the user
+      // const tournamentRound = await services.tournament.getCurrentTournamentRound();
+      // const invite = await services.tournament.getOrCreateInvite(
+      //   user.id,
+      //   tournamentRound,
+      //   true
+      // );
+      await done(null, user);
+    })
+  );
+}
 
 passport.serializeUser(function (user: Pick<User, "id">, done: Function) {
   done(null, user.id);
@@ -171,17 +177,18 @@ async function createApp() {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // make this conditional on isDev()
-  app.post("/login", passport.authenticate("local"), function (req, res) {
-    const _sessionId = req.sessionID;
-    logger.info(
-      `successful authentication for ${req.user}, setting session id ${_sessionId}`
-    );
-    res.cookie("connect.sid", _sessionId, { signed: true });
-    const sessionCookie: any = res.getHeaders()["set-cookie"];
-    logger.info(sessionCookie);
-    res.json({ user: req.user, sessionCookie });
-  });
+  if (isDev()) {
+    app.post("/login", passport.authenticate("local"), function (req, res) {
+      const _sessionId = req.sessionID;
+      logger.info(
+        `successful authentication for ${req.user}, setting session id ${_sessionId}`
+      );
+      res.cookie("connect.sid", _sessionId, { signed: true });
+      const sessionCookie: any = res.getHeaders()["set-cookie"];
+      logger.info(sessionCookie);
+      res.json({ user: req.user, sessionCookie });
+    });
+  }
   app.use("/admin", adminRouter);
   app.use("/auth", authRouter);
   app.use("/survey", surveyRouter);

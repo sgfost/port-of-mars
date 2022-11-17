@@ -26,13 +26,16 @@ function deschemify<T>(s: Schemify<T>): T {
   return s.toJSON() as T;
 }
 
-type PlayerPrimitive = Omit<PlayerData, "role" | "inventory" | "costs" | "accomplishments">;
+type PlayerPrimitive = Omit<PlayerData, "inventory" | "costs" | "accomplishments">;
 
 type ServerResponse = {
   [field in keyof PlayerPrimitive]: keyof typeof Mutations;
 };
 
 const RESPONSE_MAP: ServerResponse = {
+  role: "SET_ROLE",
+  username: "SET_USERNAME",
+  isBot: "SET_BOT_STATUS",
   botWarning: "SET_BOT_WARNING",
   specialty: "SET_SPECIALTY",
   timeBlocks: "SET_TIME_BLOCKS",
@@ -216,6 +219,7 @@ export function applyGameServerResponses<T>(room: Room, store: TStore, sfx: SfxM
   room.onMessage("set-player-role", (msg: SetPlayerRole) => {
     store.commit("SET_PLAYER_ROLE", msg.role);
   });
+
   room.onMessage("set-error", (msg: SetError) => {
     store.commit("SET_DASHBOARD_MESSAGE", {
       kind: "warning",
