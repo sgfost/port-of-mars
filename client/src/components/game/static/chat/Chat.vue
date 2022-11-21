@@ -23,31 +23,14 @@
           You cannot send private messages to other members in your group.
         </p>
         <!-- chat message -->
-        <b-row
+        <ChatMessage
           v-for="message in messages"
-          :key="message.dateCreated"
-          :style="getMessageColor(message)"
-          class="h-auto w-100 my-1 flex-column justify-content-start"
-          style="color: rgb(241, 224, 197); background-color: rgba(241, 224, 197, 0.05);
-                font-size: 1rem;"
+          :key="message.dateCreated + Math.random()"
+          :message="message"
+          :showUsername="false"
+          :showReportButton="true"
         >
-          <b-col align-self="end">
-            <!-- role of sender (e.g. Curator) -->
-            <p
-              class="mb-0 mx-2 mt-2 text-uppercase"
-              style=" color: rgb(202, 166, 110);
-               font-weight: bold"
-            >
-              {{ message.role }}
-            </p>
-            <!-- message of sender -->
-            <p class="mx-2" style="word-wrap: break-word">
-              {{ message.message }}
-            </p>
-            <!-- timestamp -->
-            <p class="mb-2 mx-2">[ {{ toDate(message.dateCreated) }} ]</p>
-          </b-col>
-        </b-row>
+        </ChatMessage>
       </b-row>
     </b-row>
     <!-- flex-shrink-1: tells this row to shrink as needed to make room for other flex-items
@@ -94,11 +77,16 @@ import { library } from "@fortawesome/fontawesome-svg-core";
 import { faPaperPlane } from "@fortawesome/free-regular-svg-icons/faPaperPlane";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { ChatMessageData } from "@port-of-mars/shared/types";
+import ChatMessage from "@port-of-mars/client/components/game/static/chat/ChatMessage.vue";
 
 library.add(faPaperPlane);
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
-@Component({})
+@Component({
+  components: {
+    ChatMessage,
+  }
+})
 export default class Chat extends Vue {
   @Inject() readonly api!: GameRequestAPI;
 
@@ -137,22 +125,11 @@ export default class Chat extends Vue {
     }
   }
 
-  toDate(unixTimestamp: number): any {
-    return new Date(unixTimestamp).toLocaleTimeString();
-  }
-
   submitToChat(): void {
     if (this.pendingMessageCleaned && this.pendingMessageCleaned !== "") {
       this.api.sendChatMessage(this.pendingMessageCleaned);
       this.pendingMessage = "";
     }
-  }
-
-  getMessageColor(message: ChatMessageData): object {
-    if (message.role) {
-      return { backgroundColor: `var(--color-${message.role})` };
-    }
-    return { backgroundColor: "var(--light-shade-05)" };
   }
 }
 </script>
