@@ -20,9 +20,12 @@
 <!-- Initializes table components & orders rank in ascending order-->
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
+import { LeaderboardAPI } from "@port-of-mars/client/api/leaderboard/request";
 
 @Component({})
 export default class Leaderboard extends Vue {
+  api!: LeaderboardAPI;
+
   exFields: any;
   exItems: any;
   sortBy: any;
@@ -39,6 +42,11 @@ export default class Leaderboard extends Vue {
         { rank: 24, user_name: "barkingdogs", position: "Lawyer", points: 20 },
       ],
     };
+  }
+  async created() {
+    this.api = new LeaderboardAPI(this.$store, this.$ajax);
+    const leaderboardData = await this.api.getLeaderboard();
+    console.log(leaderboardData);
   }
 }
 </script>

@@ -46,4 +46,43 @@ export class LeaderboardService extends BaseService {
     });
     return _.sortBy(previousGames, ["time"], ["desc"]);
   }
+
+  getUserPointsQuery(options: { where: string }, limit = 50) {
+    // FIXME: add return type
+    return this.em
+      .getRepository(Game)
+      .createQueryBuilder("game")
+      .select("row_number() over (order by sum(player.points) desc)", "rank")
+      .addSelect("user.username", "username")
+      .addSelect("sum(player.points)", "points")
+      .addSelect("count(game.id) filter (where game.status = 'victory')", "victories")
+      .addSelect("count(game.id) filter (where game.status = 'defeat')", "defeats")
+      .innerJoin("game.players", "player")
+      .innerJoin("player.user", "user")
+      .where(options.where)
+      .groupBy("user.id")
+      .orderBy("points", "DESC")
+      .limit(limit);
+  }
+
+  async getLeaderboardWithBots() {
+    const query = this.getUserPointsQuery({ where: "user.isSystemBot = false" });
+    return query.getRawMany();
+  }
+
+  async getLeaderboardWithoutBots() {
+    const noBotGamesQuery = this.em
+      .getRepository(Game)
+      .createQueryBuilder("game")
+      .select("game.id")
+      .innerJoin("game.players", "player")
+      .innerJoin("player.user", "user")
+      .where("user.isSystemBot = false")
+      .groupBy("game.id")
+      .having("count(*) = 5");
+    const query = this.getUserPointsQuery({
+      where: `game.id in ( ${noBotGamesQuery.getQuery()} )`,
+    });
+    return query.getRawMany();
+  }
 }
