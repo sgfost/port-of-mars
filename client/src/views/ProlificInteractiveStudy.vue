@@ -37,6 +37,25 @@
       </div>
     </transition>
 
+    <b-alert v-if="isDevMode" variant="danger" show dismissible>
+      <small>
+        Test mode enabled: you are currently playing with the ID:
+        <b>{{ this.participantStatus.prolificId }}</b>
+      </small>
+      <b-button variant="danger" size="sm" class="ml-3" @click="logout">log out</b-button>
+    </b-alert>
+    <b-alert v-else-if="started" variant="info" show dismissible>
+      <small>
+        <p>
+          This is an interactive multiplayer study. You will be working collaboratively with other
+          participants to make decisions that affect the group outcome.
+        </p>
+        <p class="mb-0">
+          If you are disconnected for any reason during the study, you will be able to rejoin by
+          returning to this page
+        </p>
+      </small>
+    </b-alert>
     <b-container
       class="h-100 dashboard-container content-container p-0"
       no-gutters
@@ -125,6 +144,7 @@ import Instructions from "@port-of-mars/client/components/lite/interactive/Instr
 import Dashboard from "@port-of-mars/client/components/lite/interactive/Dashboard.vue";
 import GameOver from "@port-of-mars/client/components/lite/multiplayer/GameOver.vue";
 import { ProlificMultiplayerParticipantStatus } from "@port-of-mars/shared/types";
+import { isDevOrStaging } from "@port-of-mars/shared/settings";
 
 @Component({
   name: "ProlificInteractiveStudy",
@@ -142,9 +162,10 @@ export default class ProlificInteractiveStudy extends Vue {
   participantStatus: ProlificMultiplayerParticipantStatus = {
     status: "not-started",
     startingGameType: "prolificInteractive",
+    prolificId: "",
   };
   statusLoading = true;
-
+  isDevMode = false;
   // lobby
   lobbyRoom: Room | null = null;
   joinFailureReason = "";
@@ -205,6 +226,7 @@ export default class ProlificInteractiveStudy extends Vue {
   }
 
   async created() {
+    this.isDevMode = isDevOrStaging();
     await this.fetchParticipantStatus();
     if (this.participantStatus.status === "not-started") {
       await this.joinLobby();
@@ -271,8 +293,11 @@ export default class ProlificInteractiveStudy extends Vue {
 
   private async joinLobby() {
     try {
+      const np = Number(this.$route.query.players);
+      const numPlayersOverride = Number.isFinite(np) && np >= 1 && np <= 3 ? np : undefined;
       this.lobbyRoom = await this.$client.joinOrCreate(LITE_LOBBY_NAME, {
         type: this.participantStatus.startingGameType,
+        numPlayersOverride,
       });
       applyLiteLobbyResponses(this.lobbyRoom, this);
       this.lobbyApi.connect(this.lobbyRoom);

@@ -372,10 +372,11 @@ export default class Dashboard extends Vue {
   }
 
   get systemHealthHelpText() {
+    const loss = 5 * this.state.numPlayers;
     if (this.state.sandstormRoundsRemaining > 0) {
-      return "[SANDSTORM ACTIVE] Forecasted system health loss: 25";
+      return `[SANDSTORM ACTIVE] Forecasted system health loss: ${loss + 10}`;
     }
-    return "Forecasted system health loss: 15";
+    return `Forecasted system health loss: ${loss}`;
   }
 
   handleInvest(investment: number) {

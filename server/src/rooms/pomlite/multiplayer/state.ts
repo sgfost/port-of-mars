@@ -141,9 +141,7 @@ export class LiteGameState extends Schema {
   @type("boolean") isWaitingToStart = true;
   @type("string") type: MultiplayerGameType = "prolificBaseline";
   @type("string") status: LiteGameStatus = "incomplete";
-  @type("int8") systemHealth =
-    LiteGameState.DEFAULTS.freeplay.systemHealthMax -
-    LiteGameState.DEFAULTS.freeplay.systemHealthWear;
+  @type("int8") systemHealth = LiteGameState.DEFAULTS.freeplay.startingSystemHealth;
   @type("uint8") timeRemaining = LiteGameState.DEFAULTS.freeplay.timeRemaining;
   @type("uint8") round = 1;
   @type(TreatmentParams) treatmentParams = new TreatmentParams();
@@ -191,10 +189,16 @@ export class LiteGameState extends Schema {
   threeEventsThreshold = LiteGameState.DEFAULTS.freeplay.threeEventsThreshold.max;
   // this one doesn't have to be a schema property since visibleEventCards already mirrors it
   eventCardDeck: Array<EventCard> = [];
+  numPlayersOverride?: number;
 
-  constructor(data: { userRoles: LiteRoleAssignment; type: MultiplayerGameType }) {
+  constructor(data: {
+    userRoles: LiteRoleAssignment;
+    type: MultiplayerGameType;
+    numPlayersOverride?: number;
+  }) {
     super();
     this.type = data.type;
+    this.numPlayersOverride = data.numPlayersOverride;
     this.numPlayers = this.defaultParams.numPlayers || 3;
     this.userRoles = data.userRoles;
     // set players
@@ -308,7 +312,12 @@ export class LiteGameState extends Schema {
   }
 
   get defaultParams() {
-    return LiteGameState.DEFAULTS[this.type];
+    const params = LiteGameState.DEFAULTS[this.type];
+    if (this.type === "prolificInteractive" && this.numPlayersOverride) {
+      params.numPlayers = this.numPlayersOverride;
+      params.systemHealthWear = 5 * this.numPlayersOverride;
+    }
+    return params;
   }
 
   static DEFAULTS: Record<MultiplayerGameType, LiteGameParams> = {

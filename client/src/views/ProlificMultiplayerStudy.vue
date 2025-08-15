@@ -111,6 +111,7 @@ export default class ProlificMultiplayerStudy extends Vue {
   participantStatus: ProlificMultiplayerParticipantStatus = {
     status: "not-started",
     startingGameType: "prolificBaseline",
+    prolificId: "",
   };
   statusLoading = true;
 

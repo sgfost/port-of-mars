@@ -34,6 +34,8 @@ export class LiteLobbyRoom extends LobbyRoom<LiteLobbyRoomState> {
   LOBBY_WAIT_LIMIT_MS = 5 * 60 * 1000; // 5 minutes in milliseconds
   lastPlayerJoinTimestamp: number = Date.now(); // timestamp of the last player join to the lobby room
 
+  numPlayersOverride?: number;
+
   private mutex = new Mutex();
 
   groupManager!: GroupManager;
@@ -53,10 +55,15 @@ export class LiteLobbyRoom extends LobbyRoom<LiteLobbyRoomState> {
     return new LiteLobbyRoomState();
   }
 
-  async onCreate(options: { type: LiteGameType }) {
+  async onCreate(options: { type: LiteGameType; numPlayersOverride?: number }) {
     await super.onCreate(options);
     this.type = options.type;
-    this.groupSize = LiteGameState.DEFAULTS[this.type].numPlayers || 3;
+    this.numPlayersOverride = options.numPlayersOverride;
+    if (this.type === "prolificInteractive" && options.numPlayersOverride) {
+      this.groupSize = options.numPlayersOverride;
+    } else {
+      this.groupSize = LiteGameState.DEFAULTS[this.type].numPlayers || 3;
+    }
     this.groupManager = new GroupManager(this.groupSize);
     this.lastPlayerJoinTimestamp = Date.now();
   }
@@ -143,6 +150,7 @@ export class LiteLobbyRoom extends LobbyRoom<LiteLobbyRoomState> {
     const room = await matchMaker.createRoom(LiteGameRoom.NAME, {
       type: this.type,
       users: playerUsers,
+      numPlayersOverride: this.numPlayersOverride,
     });
     logger.info(`${this.roomName} created game room ${room.roomId}`);
     // send room data for new websocket connection

@@ -78,7 +78,11 @@ export class LiteGameRoom extends Room<LiteGameState> {
     }, 1000);
   }
 
-  async onCreate(options: { type?: MultiplayerGameType; users: Array<LitePlayerUser> }) {
+  async onCreate(options: {
+    type?: MultiplayerGameType;
+    users: Array<LitePlayerUser>;
+    numPlayersOverride?: number;
+  }) {
     logger.trace("LiteGameRoom '%s' created", this.roomId);
     const type = options.type || "prolificBaseline";
     // FIXME: if prolific game, we should use the participant.study.gameType to confirm this
@@ -86,7 +90,9 @@ export class LiteGameRoom extends Room<LiteGameState> {
 
     // FIXME: should also prevent participant players from doing anything else like playing freeplay games
     const userRoles = this.assignRoles(options.users);
-    this.setState(new LiteGameState({ type, userRoles }));
+    this.setState(
+      new LiteGameState({ type, userRoles, numPlayersOverride: options.numPlayersOverride })
+    );
     this.maxClients = this.state.numPlayers;
     this.setPrivate(true);
     this.registerAllHandlers();

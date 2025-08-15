@@ -543,6 +543,7 @@ export interface ProlificMultiplayerParticipantStatus {
   completionUrl?: string;
   inProgressGameType?: LiteGameType | null;
   activeRoomId?: string;
+  prolificId: string;
 }
 
 export type StudyMode = "solo" | "multiplayer" | "interactive";

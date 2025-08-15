@@ -12,6 +12,7 @@ import { ProlificStudyData, StudyMode } from "@port-of-mars/shared/types";
 import { isAdminAuthenticated } from "@port-of-mars/server/routes/middleware";
 import { BaseStudyService } from "@port-of-mars/server/services/study";
 import { LiteGameType } from "@port-of-mars/shared/lite/types";
+import { isDevOrStaging } from "@port-of-mars/shared/settings";
 
 interface StudyModeRequest extends Request {
   studyService?: BaseStudyService;
@@ -49,18 +50,42 @@ studyRouter.use("/prolific/:mode", (req: StudyModeRequest, res: Response, next: 
 studyRouter.get(
   "/prolific/:mode",
   async (req: StudyModeRequest, res: Response, next: NextFunction) => {
-    const prolificId = String(req.query.prolificId || "");
+    let prolificId = String(req.query.prolificId || "");
+    // allow auto-generated prolificId in dev/staging for easier testing
+    if (!prolificId && isDevOrStaging()) {
+      prolificId = `test${Date.now()}`;
+    }
     if (!prolificId) {
       return res.status(403).json({
         kind: "danger",
         message: "Missing Prolific ID",
       });
     }
-    const studyId = String(req.query.studyId || "");
+    let studyId = String(req.query.studyId || "");
     if (!req.studyService) {
       return res.status(500).json({ message: "Study service not set" });
     }
-    const study = await req.studyService.getProlificStudy(studyId);
+    // allow omitting studyId only in dev/staging: select latest active study for this mode/service
+    let study = null as any;
+    if (studyId) {
+      study = await req.studyService.getProlificStudy(studyId);
+    } else if (isDevOrStaging()) {
+      const repo = req.studyService.getRepository();
+      const results = await repo.find({
+        where: { isActive: true },
+        order: { id: "DESC" },
+        take: 1,
+      });
+      study = results[0] ?? null;
+      if (study) {
+        studyId = study.studyId;
+      }
+    } else {
+      return res.status(403).json({
+        kind: "danger",
+        message: "Missing study ID",
+      });
+    }
     if (!study || !study.isActive) {
       return res.status(403).json({
         kind: "danger",
@@ -77,12 +102,16 @@ studyRouter.get(
     passport.authenticate(`local-prolific-${req.params.mode}`)(req, res, next);
   },
   (req: StudyModeRequest, res: Response) => {
+    // pass optional numPlayers override to SPA hash route as ?players=<value>
+    const np = Number(req.query.players || "");
+    const hasValidNp = !Number.isNaN(np) && np >= 1 && np <= 3;
+    const withNp = (baseUrl: string) => (hasValidNp ? `${baseUrl}?players=${np}` : baseUrl);
     if (req.mode == "solo") {
       res.redirect(toUrl(PROLIFIC_SOLO_STUDY_PAGE));
     } else if (req.mode == "multiplayer") {
       res.redirect(toUrl(PROLIFIC_MULTIPLAYER_STUDY_PAGE));
     } else if (req.mode == "interactive") {
-      res.redirect(toUrl(PROLIFIC_INTERACTIVE_STUDY_PAGE));
+      res.redirect(withNp(toUrl(PROLIFIC_INTERACTIVE_STUDY_PAGE)));
     }
   }
 );

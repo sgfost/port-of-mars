@@ -514,6 +514,7 @@ export class MultiplayerStudyService extends BaseStudyService {
       return {
         status: "not-started",
         startingGameType: participant.study.gameType,
+        prolificId: participant.prolificId,
       };
     }
 
@@ -564,6 +565,7 @@ export class MultiplayerStudyService extends BaseStudyService {
       ...(status === "completed" && { completionUrl }),
       // only if the Colyseus room is still live
       ...(activeRoomId && { activeRoomId }),
+      prolificId: participant.prolificId,
     };
   }
 
@@ -860,7 +862,7 @@ export class InteractiveStudyService extends BaseStudyService {
     return this.em.getRepository(ProlificInteractiveStudyParticipant);
   }
 
-  async getProlificParticipantStatus(user: User) {
+  async getProlificParticipantStatus(user: User): Promise<ProlificMultiplayerParticipantStatus> {
     const repo = this.getParticipantRepository();
     let participant: ProlificInteractiveStudyParticipant;
     try {
@@ -881,6 +883,7 @@ export class InteractiveStudyService extends BaseStudyService {
       return {
         status: "not-started",
         startingGameType: "prolificInteractive" as const,
+        prolificId: participant.prolificId,
       };
     }
     const gameStatus = participant.interactivePlayer.game?.status;
@@ -909,6 +912,7 @@ export class InteractiveStudyService extends BaseStudyService {
       ...(status === "in-progress" && { inProgressGameType: "prolificInteractive" as const }),
       ...(status === "completed" && { completionUrl }),
       ...(activeRoomId && { activeRoomId }),
+      prolificId: participant.prolificId,
     };
   }
 
