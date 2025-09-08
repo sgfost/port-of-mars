@@ -34,6 +34,7 @@ export interface ClientSafeUser {
   isSystemBot?: boolean;
   dateConsented?: Date;
   participantId?: string;
+  prolificParticipantMode: StudyMode | null;
 }
 
 export interface ProfileData {

@@ -296,6 +296,12 @@ export default class ProlificInteractiveStudy extends Vue {
   beforeDestroy() {
     this.leaveAll();
   }
+
+  logout() {
+    this.$ajax.forgetLoginCreds();
+    this.$ajax.forgetSubmissionId();
+    this.$router.push({ name: "Login" });
+  }
 }
 </script>
 

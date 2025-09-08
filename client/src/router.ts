@@ -49,6 +49,7 @@ import {
   PROLIFIC_MULTIPLAYER_STUDY_PAGE,
   PROLIFIC_INTERACTIVE_STUDY_PAGE,
 } from "@port-of-mars/shared/routes";
+import { StudyMode } from "@port-of-mars/shared/types";
 
 Vue.use(VueRouter);
 
@@ -134,6 +135,20 @@ function hasConsented() {
   return store.getters.hasConsented;
 }
 
+function prolificParticipantMode(): StudyMode | null {
+  return store.getters.prolificParticipantMode;
+}
+
+function prolificStudyPageForMode(mode: StudyMode) {
+  if (mode === "solo") {
+    return PROLIFIC_SOLO_STUDY_PAGE;
+  } else if (mode === "multiplayer") {
+    return PROLIFIC_MULTIPLAYER_STUDY_PAGE;
+  } else if (mode === "interactive") {
+    return PROLIFIC_INTERACTIVE_STUDY_PAGE;
+  }
+}
+
 router.beforeEach((to: any, from: any, next: NavigationGuardNext) => {
   if (from === VueRouter.START_LOCATION) {
     console.log("initializing store");
@@ -149,6 +164,19 @@ router.beforeEach((to: any, from: any, next: NavigationGuardNext) => {
   } else {
     next();
   }
+});
+
+router.beforeEach((to: any, from: any, next: NavigationGuardNext) => {
+  // make sure that prolific participants are only able to access their own study page
+  const mode = prolificParticipantMode();
+  if (!mode) {
+    return next();
+  }
+  const pageName = prolificStudyPageForMode(mode);
+  if (to.name === pageName) {
+    return next();
+  }
+  return next({ name: pageName });
 });
 
 router.beforeEach((to: any, from: any, next: NavigationGuardNext) => {
