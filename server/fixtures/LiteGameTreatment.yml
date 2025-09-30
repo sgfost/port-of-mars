@@ -197,34 +197,36 @@ items:
   liteProlificInteractiveTreatment1:
     id: 20
     gameType: prolificInteractive
-    isNumberOfRoundsKnown: false
-    isEventDeckKnown: true
-    thresholdInformation: known
-    isLowResSystemHealth: false
-    numLifeAsUsualCardsOverride: 6
-    instructions: |
-      <h4>FIXME: Instructions placeholder</h4>
-      <h6>Treatment 1, 6 Life as Usual cards</h6>
-  liteProlificInteractiveTreatment2:
-    id: 21
-    gameType: prolificInteractive
-    isNumberOfRoundsKnown: false
+    isNumberOfRoundsKnown: true
     isEventDeckKnown: true
     thresholdInformation: known
     isLowResSystemHealth: false
     numLifeAsUsualCardsOverride: 12
-    instructions: |
-      <h4>FIXME: Instructions placeholder</h4>
-      <h6>Treatment 2, 12 Life as Usual cards</h6>
-  liteProlificInteractiveTreatment3:
-    id: 22
+    instructions: ""
+  liteProlificInteractiveTreatment2:
+    id: 21
     gameType: prolificInteractive
-    isNumberOfRoundsKnown: false
+    isNumberOfRoundsKnown: true
     isEventDeckKnown: true
     thresholdInformation: known
     isLowResSystemHealth: false
-    numLifeAsUsualCardsOverride: 18
-    instructions: |
-      <h4>FIXME: Instructions placeholder</h4>
-      <h6>Treatment 3, 18 Life as Usual cards</h6>
+    numLifeAsUsualCardsOverride: 12
+    instructions: >
+      Groups in the Port of Mars game are more successful if they discuss
+      in detail the planning of investment decisions. You are recommended
+      to chat about the strategy of the group, the state of the game, and
+      discuss any questions you have about the mechanics of the game.
+  liteProlificInteractiveTreatment3:
+    id: 22
+    gameType: prolificInteractive
+    isNumberOfRoundsKnown: true
+    isEventDeckKnown: true
+    thresholdInformation: known
+    isLowResSystemHealth: false
+    numLifeAsUsualCardsOverride: 12
+    instructions: >
+      Groups in the Port of Mars game are more successful if they have
+      respectful and positive interactions with each other. You are recommended
+      to make compliments if others make good decisions and use a positive
+      attitude in your communications. Go team!
 

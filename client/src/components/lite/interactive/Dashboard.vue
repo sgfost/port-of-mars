@@ -54,7 +54,7 @@
           </div>
           <div class="d-flex align-items-center">
             <div class="d-flex flex-column align-items-center">
-              <h6 class="text-center">Points</h6>
+              <h6 class="text-center"><b-icon-star></b-icon-star> Points</h6>
               <div class="vfd-container p-2">
                 <VFDNumberDisplay
                   :digits="2"
@@ -65,7 +65,7 @@
               </div>
             </div>
             <div class="d-flex flex-column align-items-center ml-3">
-              <h6 class="text-center">Resources</h6>
+              <h6 class="text-center"><b-icon-clock></b-icon-clock> Time Blocks</h6>
               <div class="vfd-container p-2">
                 <VFDNumberDisplay
                   :digits="2"
@@ -173,7 +173,7 @@
                   :state="state"
                   v-model="pendingSystemHealthInvestment"
                   @invest="handleInvest"
-                  helpText="Contribute resources to system health. Left over resources are earned as points."
+                  helpText="Contribute time blocks to system health. Left over time blocks are earned as points."
                   buttonText="Invest"
                   :enableKeyboard="false"
                   :shouldFlashEachRound="true"
@@ -185,7 +185,11 @@
       </div>
 
       <div class="cell-shrink mw-25" style="min-width: 25%">
-        <LiteChat :messages="state.chatMessages" :chatEnabled="state.chatEnabled" />
+        <LiteChat
+          :messages="state.chatMessages"
+          :chatEnabled="state.chatEnabled"
+          :reminderText="$parent.shortTreatmentText"
+        />
       </div>
     </div>
   </div>

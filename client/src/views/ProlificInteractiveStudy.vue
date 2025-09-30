@@ -1,18 +1,50 @@
 <template>
   <div class="backdrop d-flex flex-column justify-content-center align-items-center">
-    <b-alert v-if="started" variant="info" show dismissible>
-      <small>
-        <p>
-          This is an interactive multiplayer study. You will be working collaboratively with other
-          participants to make decisions that affect the group outcome.
-        </p>
-        <p class="mb-0">
-          If you are disconnected for any reason during the study, you will be able to rejoin by
-          returning to this page
-        </p>
-      </small>
-    </b-alert>
-    <b-container class="h-100 dashboard-container content-container p-0" no-gutters>
+    <div
+      v-if="started && !state.isWaitingToStart && !isGameOver && !showInstructions"
+      class="instructions-btn-wrapper"
+    >
+      <b-button
+        variant="primary"
+        class="d-flex align-items-center"
+        @click="showInstructions = !showInstructions"
+      >
+        <b-icon-info-circle class="mr-2"></b-icon-info-circle>
+        <h4 class="mb-0">Instructions</h4>
+      </b-button>
+    </div>
+    <transition name="slide">
+      <div
+        v-if="showInstructions"
+        class="position-fixed h-100 bg-dark instructions-sidebar"
+        style="width: 500px; left: 0; top: 0; z-index: 1040"
+      >
+        <div class="d-flex flex-column h-100">
+          <div class="d-flex justify-content-end align-items-center p-3">
+            <b-button
+              variant="primary"
+              class="d-flex align-items-center"
+              @click="showInstructions = false"
+            >
+              <b-icon-x class="mr-2"></b-icon-x>
+              <h4 class="mb-0">Close</h4>
+            </b-button>
+          </div>
+          <div class="flex-grow-1 d-flex align-items-center p-3">
+            <Instructions />
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <b-container
+      class="h-100 dashboard-container content-container p-0"
+      no-gutters
+      :style="{
+        marginLeft: showInstructions ? 'auto' : 'auto',
+        marginRight: showInstructions ? '0' : 'auto',
+      }"
+    >
       <div v-if="joinFailureReason" class="text-center p-5">
         <p>{{ joinFailureReason }}</p>
       </div>
@@ -26,25 +58,25 @@
         <b-progress :value="clients.length" :max="requiredPlayers" animated class="my-3" />
         <small class="text-muted">
           <p>
-            This interactive study requires all participants to be present. Please allow time for
-            other participants to join. If 5 minutes passes since the last participant joined, you
-            will be redirected back to Prolific and compensated for your time.
+            This study requires all participants to be present. Please allow time for other
+            participants to join. If 5 minutes passes since the last participant joined, you will be
+            redirected back to Prolific and compensated for your time.
           </p>
           <p>Please <b>do not</b> refresh this page</p>
         </small>
       </div>
 
       <div v-else-if="started && state.isWaitingToStart" class="text-center p-5">
-        <span class="mb-4 text-left" v-html="state.treatmentParams.instructions"> </span>
+        <Instructions :treatmentText="state.treatmentParams.instructions" />
         <b-button
           variant="primary"
           class="mt-3"
           :disabled="state.player.isReadyToStart"
           @click="setPlayerReady"
         >
-          {{ state.player.isReadyToStart ? "Waiting on others…" : "Start Interactive Study" }}
+          {{ state.player.isReadyToStart ? "Waiting on others…" : "Start Game" }}
         </b-button>
-        <h5 class="mb-0 mt-3">The study will automatically start in {{ state.timeRemaining }}s</h5>
+        <h5 class="mb-0 mt-3">The game will automatically start in {{ state.timeRemaining }}s</h5>
       </div>
 
       <Dashboard v-else-if="started && !state.isWaitingToStart && !isGameOver" :state="state" />
@@ -89,20 +121,22 @@ import {
   applyMultiplayerGameServerResponses,
 } from "@port-of-mars/client/api/pomlite/multiplayer/response";
 import { StudyAPI } from "@port-of-mars/client/api/study/request";
-import Splash from "@port-of-mars/client/components/lite/multiplayer/Splash.vue";
+import Instructions from "@port-of-mars/client/components/lite/interactive/Instructions.vue";
 import Dashboard from "@port-of-mars/client/components/lite/interactive/Dashboard.vue";
 import GameOver from "@port-of-mars/client/components/lite/multiplayer/GameOver.vue";
 import { ProlificMultiplayerParticipantStatus } from "@port-of-mars/shared/types";
 
 @Component({
   name: "ProlificInteractiveStudy",
-  components: { Splash, Dashboard, GameOver },
+  components: { Instructions, Dashboard, GameOver },
 })
 export default class ProlificInteractiveStudy extends Vue {
   @Inject() readonly $client!: Client;
   @Provide() private api = new LiteGameRequestAPI();
   lobbyApi = new LiteLobbyRequestAPI(this.$ajax);
   studyApi = new StudyAPI(this.$store, this.$ajax, "interactive");
+
+  showInstructions = false;
 
   // participant
   participantStatus: ProlificMultiplayerParticipantStatus = {
@@ -133,6 +167,13 @@ export default class ProlificInteractiveStudy extends Vue {
     points: 0,
     round: 0,
   };
+
+  get shortTreatmentText() {
+    if (!this.state.treatmentParams.instructions) return undefined;
+    if (this.state.treatmentParams.instructions.includes("planning")) return "Plan together";
+    if (this.state.treatmentParams.instructions.includes("positive")) return "Positivity wins";
+    return undefined;
+  }
 
   get isStudyComplete() {
     return this.participantStatus.status === "completed";
@@ -172,6 +213,25 @@ export default class ProlificInteractiveStudy extends Vue {
         // try to re-join active game
         await this.joinGame(this.participantStatus.activeRoomId);
       }
+    }
+  }
+
+  mounted() {
+    document.addEventListener("click", this.handleOutsideClick);
+  }
+
+  handleOutsideClick(event: MouseEvent) {
+    if (!this.showInstructions) return;
+    // check if click was inside instructions or the toggle button
+    const instructionsEl = document.querySelector(".instructions-sidebar");
+    const toggleBtn = document.querySelector(".instructions-btn-wrapper");
+    if (
+      instructionsEl &&
+      !instructionsEl.contains(event.target as Node) &&
+      toggleBtn &&
+      !toggleBtn.contains(event.target as Node)
+    ) {
+      this.showInstructions = false;
     }
   }
 
@@ -295,6 +355,7 @@ export default class ProlificInteractiveStudy extends Vue {
 
   beforeDestroy() {
     this.leaveAll();
+    document.removeEventListener("click", this.handleOutsideClick);
   }
 
   logout() {
@@ -310,5 +371,32 @@ export default class ProlificInteractiveStudy extends Vue {
 .dashboard-container {
   max-width: 1200px;
   max-height: 700px;
+  transition: margin 0.3s ease;
+}
+
+.instructions-btn-wrapper {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 1050;
+
+  .btn {
+    padding: 0.5rem 1rem;
+  }
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-enter,
+.slide-leave-to {
+  transform: translateX(-100%);
+}
+
+.slide-enter-to,
+.slide-leave {
+  transform: translateX(0);
 }
 </style>

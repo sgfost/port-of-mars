@@ -442,7 +442,7 @@ items:
     codeName: "personalGain"
     displayName: "Personal Gain"
     flavorText: "It's easy to take risks when others are incurring the costs."
-    effect: "Each player chooses yes or no. Whoever chose yes gains 6 resources and destroys 6 system health."
+    effect: "Each player chooses yes or no. Whoever chose yes gains 6 time blocks and destroys 6 system health."
     requiresVote: true
     drawMin: 1
     drawMax: 1
@@ -457,7 +457,7 @@ items:
     codeName: "compulsivePhilanthropy"
     displayName: "Compulsive Philanthropy"
     flavorText: "There's nothing quite like being volun-told for the greater good."
-    effect: "Players vote to force one player to put all resources into system health."
+    effect: "Players vote to force one player to put all time blocks into system health."
     requiresVote: true
     drawMin: 1
     drawMax: 1
@@ -472,7 +472,7 @@ items:
     codeName: "heroOrPariah"
     displayName: "Hero or Pariah"
     flavorText: "In a community as small as Port of Mars, some individuals always stand out - for better or worse."
-    effect: "players first choose whether someone should lose all resources or gain 4 resources, then vote for the player"
+    effect: "players first choose whether someone should lose all time blocks or gain 4 time blocks, then vote for the player"
     requiresVote: true
     drawMin: 1
     drawMax: 1
@@ -586,7 +586,7 @@ items:
     codeName: "outOfCommissionPolitician"
     displayName: "Out of Commission"
     flavorText: "The mental and physical health of all residents is critical to mission success. The absence of even one person can have rippling effects on the community."
-    effect: "The Politician loses 7 resources."
+    effect: "The Politician loses 7 time blocks."
     affectedRole: "Politician"
     requiresVote: false
     drawMin: 1
@@ -602,7 +602,7 @@ items:
     codeName: "outOfCommissionEntrepreneur"
     displayName: "Out of Commission"
     flavorText: "The mental and physical health of all residents is critical to mission success. The absence of even one person can have rippling effects on the community."
-    effect: "The Entrepreneur loses 7 resources."
+    effect: "The Entrepreneur loses 7 time blocks."
     affectedRole: "Entrepreneur"
     requiresVote: false
     drawMin: 1
@@ -618,7 +618,7 @@ items:
     codeName: "outOfCommissionResearcher"
     displayName: "Out of Commission"
     flavorText: "The mental and physical health of all residents is critical to mission success. The absence of even one person can have rippling effects on the community."
-    effect: "The Researcher loses 7 resources."
+    effect: "The Researcher loses 7 time blocks."
     affectedRole: "Researcher"
     requiresVote: false
     drawMin: 1
@@ -634,7 +634,7 @@ items:
     codeName: "lostTime"
     displayName: "Time Wasted"
     flavorText: "Time flies when you're trying to stay alive."
-    effect: "Each player loses 5 resources."
+    effect: "Each player loses 5 time blocks."
     requiresVote: false
     drawMin: 1
     drawMax: 1

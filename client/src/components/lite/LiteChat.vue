@@ -31,8 +31,11 @@
           v-model="pendingMessage"
           placeholder="Type and press enter to send a message"
         />
-        <div class="d-flex justify-content-end">
-          <b-button variant="primary" size="sm" class="mt-2" @click="submitToChat">Send</b-button>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+          <span class="text-light font-weight-bold">
+            {{ reminderText }}
+          </span>
+          <b-button variant="primary" size="sm" @click="submitToChat">Send</b-button>
         </div>
       </div>
     </div>
@@ -62,6 +65,9 @@ export default class LiteChat extends Vue {
 
   @Prop({ default: true })
   chatEnabled!: boolean;
+
+  @Prop()
+  reminderText?: string;
 
   pendingMessage = "";
 
