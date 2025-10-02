@@ -61,6 +61,7 @@ export interface LiteGameParams {
   nextGameType?: LiteGameType;
   maxRound: { min: number; max: number };
   roundTransitionDuration: number;
+  reportDuration?: number;
   twoEventsThreshold: { min: number; max: number };
   threeEventsThreshold: { min: number; max: number };
   twoEventsThresholdDisplayRange?: { min: number; max: number };
@@ -74,6 +75,13 @@ export interface LiteGameParams {
   resources: number;
   availableRoles?: Array<Role>;
   chatEnabled?: boolean;
+}
+
+export interface SystemHealthReportData {
+  previousSystemHealth: number;
+  currentSystemHealth: number;
+  eventsDelta: number;
+  standardDecay: number;
 }
 
 export interface SoloGameClientState {
@@ -114,6 +122,7 @@ export interface LiteGamePlayerClientState {
   hasInvested: boolean;
   pointsEarned: number | null;
   isReadyToStart: boolean;
+  systemHealthContribution: number;
   vote?: VoteData;
 }
 
@@ -135,6 +144,9 @@ export interface VoteData {
 export interface LiteGameClientState extends SoloGameClientState {
   eventTimeRemaining: number;
   eventTimeTotal: number;
+  // round-start system health report phase
+  isRoundReportInProgress: boolean;
+  lastRoundReport: SystemHealthReportData;
   players: Record<string, LiteGamePlayerClientState>;
   player: LiteGamePlayerClientState;
   numPlayers: number;

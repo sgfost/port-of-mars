@@ -298,6 +298,7 @@ abstract class BaseCardCmd extends Cmd<{ card: EventCard; playerSkipped: boolean
       resourcesChange,
       systemHealthChange
     );
+    this.state.lastRoundReport.eventsDelta += systemHealthChange;
   }
 
   protected finishCard() {
@@ -419,6 +420,7 @@ export class ApplyStandardCardCmd extends BaseCardCmd {
         this.state.systemHealth + scaledSystemHealthEffect
       )
     );
+    this.state.lastRoundReport.eventsDelta += scaledSystemHealthEffect;
 
     return this.finishCard();
   }
@@ -462,6 +464,7 @@ export class ApplyCompulsivePhilanthropyCmd extends BaseCardCmd {
           this.defaultParams.systemHealthMax,
           this.state.systemHealth + resourcesInvested
         );
+        targetPlayer.systemHealthContribution = resourcesInvested;
         targetPlayer.resources = 0;
 
         // persist the voting effects
@@ -770,8 +773,11 @@ export class ProcessRoundCmd extends CmdWithoutPayload {
           surplus = player.resources - player.pendingInvestment;
         }
         totalSystemHealthInvestment += player.pendingInvestment;
+        player.systemHealthContribution = player.pendingInvestment;
         player.points += surplus;
         player.pointsEarned = surplus;
+      } else {
+        player.systemHealthContribution = 0;
       }
     });
     this.state.systemHealth = Math.min(
@@ -795,6 +801,13 @@ export class ProcessRoundCmd extends CmdWithoutPayload {
     if (this.state.systemHealth <= 0) {
       return [new PersistRoundCmd(), new EndGameCmd().setPayload({ status: "defeat" })];
     }
+    // build last round report (for display at start of NEXT round)
+    // extra wear counts towards events effect
+    this.state.lastRoundReport.eventsDelta -= extraWear;
+    this.state.lastRoundReport.previousSystemHealth = this.state.roundInitialSystemHealth;
+    this.state.lastRoundReport.currentSystemHealth = this.state.systemHealth;
+    this.state.lastRoundReport.standardDecay = this.defaultParams.systemHealthWear;
+
     return [new PersistRoundCmd(), new SetNextRoundCmd()];
   }
 }
@@ -839,6 +852,20 @@ export class SetNextRoundCmd extends CmdWithoutPayload {
       card.inPlay = false;
     });
     this.state.updateVisibleCards();
+
+    // start report phase before events if report is enabled (duration defined and > 0)
+    if (this.defaultParams.reportDuration) {
+      // report shows the last completed round; do not clear it here
+      const reportTimeout = this.defaultParams.reportDuration;
+      this.state.isRoundReportInProgress = true;
+      // add to main timer and sleep
+      this.state.timeRemaining += reportTimeout;
+      await new Promise(resolve => setTimeout(resolve, reportTimeout * 1000));
+      this.state.isRoundReportInProgress = false;
+      // now clear the report so it's ready for the next round
+      this.state.lastRoundReport.eventsDelta = 0;
+    }
+
     if (this.state.upcomingEventCards.length > 0) {
       return new DrawCardsCmd();
     } else {

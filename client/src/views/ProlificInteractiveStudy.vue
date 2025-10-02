@@ -53,7 +53,7 @@
         class="mt-5 text-center p-5"
         style="max-width: 30rem; margin: auto"
       >
-        <p>Waiting for participants to join the interactive study...</p>
+        <p>Waiting for participants to join the study...</p>
         <h4>{{ clients.length }} / {{ requiredPlayers }} Participants</h4>
         <b-progress :value="clients.length" :max="requiredPlayers" animated class="my-3" />
         <small class="text-muted">

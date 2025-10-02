@@ -46,7 +46,7 @@
               Deal with them before investing
             </p>
             <Clock
-              v-if="state.activeCardId < 0"
+              v-if="state.activeCardId < 0 && !state.isRoundReportInProgress"
               :timeRemaining="state.timeRemaining"
               :size="2"
               :showBlank="state.activeCardId >= 0"
@@ -92,8 +92,14 @@
                   @before-leave="onBeforeEventCardLeave"
                   @after-leave="onAfterEventCardLeave"
                 >
+                  <RoundReport
+                    v-if="state.isRoundReportInProgress"
+                    :players="state.players"
+                    :lastRoundReport="state.lastRoundReport"
+                    :selfPlayer="state.player"
+                  />
                   <EventCard
-                    v-if="state.activeCardId >= 0"
+                    v-if="!state.isRoundReportInProgress && state.activeCardId >= 0"
                     :key="`card-${activeCard.deckCardId}`"
                     class="w-100"
                     :event="activeCard"
@@ -147,7 +153,7 @@
                   </EventCard>
                 </transition>
                 <div
-                  v-if="state.activeCardId < 0 && !isCardLeaving"
+                  v-if="!state.isRoundReportInProgress && state.activeCardId < 0 && !isCardLeaving"
                   class="flex-grow-1 d-flex align-items-center justify-content-center"
                 >
                   <div class="w-100">
@@ -203,6 +209,7 @@ import EventCard from "@port-of-mars/client/components/lite/EventCard.vue";
 import LiteChat from "@port-of-mars/client/components/lite/LiteChat.vue";
 import PlayerIndicators from "@port-of-mars/client/components/lite/PlayerIndicators.vue";
 import SegmentedBar from "@port-of-mars/client/components/lite/SegmentedBar.vue";
+import RoundReport from "@port-of-mars/client/components/lite/interactive/RoundReport.vue";
 import Investment from "@port-of-mars/client/components/lite/Investment.vue";
 import Clock from "@port-of-mars/client/components/lite/Clock.vue";
 import ThresholdInfo from "@port-of-mars/client/components/lite/ThresholdInfo.vue";
@@ -217,6 +224,7 @@ import { Role } from "@port-of-mars/shared/types";
     LiteChat,
     PlayerIndicators,
     SegmentedBar,
+    RoundReport,
     Investment,
     Clock,
     ThresholdInfo,
@@ -305,6 +313,9 @@ export default class Dashboard extends Vue {
     } else if (this.state.activeCardId >= 0) {
       label = "Events active";
       color = "var(--warning)";
+    } else if (this.state.isRoundReportInProgress) {
+      label = "System Health Report";
+      color = "var(--success)";
     } else {
       label = "Make an investment";
       color = "var(--primary)";

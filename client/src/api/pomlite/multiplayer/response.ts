@@ -33,6 +33,15 @@ export function applyMultiplayerGameServerResponses(
     });
   }
 
+  room.state.lastRoundReport.onChange = (changes: DataChange[]) => {
+    applyChanges(component.state.lastRoundReport, changes, [
+      "previousSystemHealth",
+      "currentSystemHealth",
+      "eventsDelta",
+      "standardDecay",
+    ]);
+  };
+
   room.state.treatmentParams.onChange = (changes: DataChange[]) => {
     applyChanges(component.state.treatmentParams, changes, [
       "isNumberOfRoundsKnown",
@@ -72,6 +81,7 @@ export function applyMultiplayerGameServerResponses(
       "activeCardId",
       "canInvest",
       "isRoundTransitioning",
+      "isRoundReportInProgress",
       "auditing",
       "sandstormRoundsRemaining",
       "status",
@@ -177,11 +187,13 @@ export const DEFAULT_STATE: LiteGameClientState = {
     hasInvested: false,
     pointsEarned: null,
     isReadyToStart: false,
+    systemHealthContribution: 0,
   },
   visibleEventCards: [],
   activeCardId: -1,
   canInvest: false,
   isRoundTransitioning: false,
+  isRoundReportInProgress: false,
   isWaitingToStart: true,
   chatMessages: [],
   chatEnabled: false,
@@ -190,4 +202,10 @@ export const DEFAULT_STATE: LiteGameClientState = {
   heroOrPariah: "",
   auditing: false,
   sandstormRoundsRemaining: 0,
+  lastRoundReport: {
+    previousSystemHealth: 0,
+    currentSystemHealth: 0,
+    eventsDelta: 0,
+    standardDecay: 0,
+  },
 };

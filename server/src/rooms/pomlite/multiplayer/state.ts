@@ -8,6 +8,7 @@ import {
   HiddenParams,
   ChatMessageData,
   VoteData,
+  SystemHealthReportData,
 } from "@port-of-mars/shared/lite";
 import { Role, LiteRoleAssignment } from "@port-of-mars/shared/types";
 import { Client } from "colyseus";
@@ -29,6 +30,22 @@ export class ChatMessage extends Schema {
     this.message = data.message;
     this.dateCreated = data.dateCreated;
     this.round = data.round;
+  }
+}
+
+export class SystemHealthReport extends Schema {
+  @type("int16") previousSystemHealth = 0;
+  @type("int16") currentSystemHealth = 0;
+  @type("int16") eventsDelta = 0;
+  @type("int16") standardDecay = 0;
+
+  constructor(data?: SystemHealthReportData) {
+    super();
+    if (!data) return;
+    this.previousSystemHealth = data.previousSystemHealth;
+    this.currentSystemHealth = data.currentSystemHealth;
+    this.eventsDelta = data.eventsDelta;
+    this.standardDecay = data.standardDecay;
   }
 }
 
@@ -90,6 +107,7 @@ export class Player extends Schema {
   @type("boolean") hasInvested = false;
   @type("uint8") pointsEarned = 0;
   @type("boolean") isReadyToStart = false;
+  @type("uint8") systemHealthContribution = 0;
   @type(Vote) vote?: Vote;
 }
 
@@ -145,6 +163,10 @@ export class LiteGameState extends Schema {
   @type("uint8") eventTimeRemaining = 0;
   @type("uint8") eventTimeTotal = 0;
 
+  // round-start report phase
+  @type("boolean") isRoundReportInProgress = false;
+  @type(SystemHealthReport) lastRoundReport: SystemHealthReport;
+
   @type("boolean") canInvest = false;
   @type("boolean") isRoundTransitioning = false;
 
@@ -177,6 +199,12 @@ export class LiteGameState extends Schema {
       player.points = 0;
       this.players.set(user.id.toString(), player);
     }
+    this.lastRoundReport = new SystemHealthReport({
+      previousSystemHealth: this.roundInitialSystemHealth,
+      currentSystemHealth: this.systemHealth,
+      eventsDelta: 0,
+      standardDecay: 0,
+    });
   }
 
   get points() {
@@ -336,6 +364,7 @@ export class LiteGameState extends Schema {
       systemHealthScalingFactor: 1,
       maxRound: { min: 8, max: 12 },
       roundTransitionDuration: 3,
+      reportDuration: 10,
       twoEventsThreshold: { min: 39, max: 39 }, // full game is 13 * numplayers
       threeEventsThreshold: { min: 21, max: 21 }, // full game is 7 * numplayers
       timeRemaining: 45,

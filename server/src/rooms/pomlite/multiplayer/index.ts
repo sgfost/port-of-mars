@@ -5,7 +5,7 @@ import { LiteGameState, ChatMessage } from "@port-of-mars/server/rooms/pomlite/m
 import { settings } from "@port-of-mars/server/settings";
 import { getServices } from "@port-of-mars/server/services";
 import { User } from "@port-of-mars/server/entity";
-import { Invest, MultiplayerGameType, Vote } from "@port-of-mars/shared/lite";
+import { Invest, MultiplayerGameType } from "@port-of-mars/shared/lite";
 import { LitePlayerUser, LiteRoleAssignment, Role } from "@port-of-mars/shared/types";
 import {
   EndGameCmd,
