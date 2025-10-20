@@ -174,6 +174,8 @@ export class LiteGameState extends Schema {
   @type("boolean") auditing = false;
   @type("uint8") sandstormRoundsRemaining = 0;
 
+  @type("string") voteOutcomeText = "";
+
   gameId = 0;
   userRoles: LiteRoleAssignment;
   roundInitialSystemHealth = LiteGameState.DEFAULTS.freeplay.systemHealthMax;
@@ -362,7 +364,7 @@ export class LiteGameState extends Schema {
     prolificInteractive: {
       numPlayers: 3,
       systemHealthScalingFactor: 1,
-      maxRound: { min: 8, max: 12 },
+      maxRound: { min: 12, max: 12 },
       roundTransitionDuration: 3,
       reportDuration: 10,
       twoEventsThreshold: { min: 39, max: 39 }, // full game is 13 * numplayers

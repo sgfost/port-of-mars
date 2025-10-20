@@ -104,8 +104,12 @@
                     class="w-100"
                     :event="activeCard"
                     style="max-width: 48rem; margin: 0 auto"
+                    :showFlavorText="!state.heroOrPariah"
                   >
-                    <div v-if="isVotingEvent && activeCard?.requiresVote" class="mt-2">
+                    <div
+                      v-if="isVotingEvent && activeCard?.requiresVote && !state.voteOutcomeText"
+                      class="mt-2"
+                    >
                       <div v-if="getVotingType === 'binary'" class="text-center">
                         <b-button-group size="md" class="w-100">
                           <b-button
@@ -127,12 +131,16 @@
                         </b-button-group>
                       </div>
                       <div v-else-if="getVotingType === 'role'" class="text-center">
+                        <p v-if="state.heroOrPariah" class="text-muted mb-2">
+                          vote for a {{ state.heroOrPariah }}
+                        </p>
                         <div class="d-flex flex-wrap justify-content-center">
                           <b-button
                             v-for="role in getAvailableRoles"
                             :key="role"
                             class="m-1"
-                            variant="warning"
+                            size="sm"
+                            variant="primary"
                             @click="handleRoleVote(role)"
                             :disabled="hasVoted"
                             :class="{ 'animate-flashing vfd-yellow': !hasVoted }"
@@ -142,7 +150,15 @@
                         </div>
                       </div>
                     </div>
-                    <div v-if="state.eventTimeTotal > 0" class="event-timer mt-2">
+                    <div v-if="state.voteOutcomeText" class="mt-2 text-center">
+                      <span class="badge bg-warning">
+                        <h6 class="mb-0 text-black text-wrap">{{ state.voteOutcomeText }}</h6>
+                      </span>
+                    </div>
+                    <div
+                      v-if="state.eventTimeTotal > 0 && !state.voteOutcomeText"
+                      class="event-timer mt-2"
+                    >
                       <b-progress
                         :value="state.eventTimeRemaining"
                         :max="state.eventTimeTotal"
@@ -164,6 +180,7 @@
                       <ThresholdInfo
                         :state="state"
                         :thresholdInformation="state.treatmentParams.thresholdInformation"
+                        :normalizeThresholds="false"
                       />
                     </div>
                   </div>
@@ -196,6 +213,32 @@
           :chatEnabled="state.chatEnabled"
           :reminderText="$parent.shortTreatmentText"
         />
+      </div>
+    </div>
+    <div
+      v-if="state.visibleEventCards.length > 0"
+      class="d-flex flex-row align-items-center cell-shrink"
+    >
+      <h6 class="mx-2 mb-0">Events this round</h6>
+      <div class="d-flex flex-row align-items-stretch overflow-auto">
+        <div
+          v-for="e in state.visibleEventCards"
+          :key="e.deckCardId || e.id"
+          class="border d-flex align-items-center mr-2 px-2 py-1"
+          :class="e.expired ? 'border-0 text-muted' : 'border-primary text-primary'"
+        >
+          <h6 class="mb-0 text-truncate" style="max-width: 11rem">
+            {{ e.displayName }}
+          </h6>
+          <b-icon-info-circle class="ml-2" :id="`event-popover-${e.deckCardId || e.id}`" />
+          <b-popover
+            :target="`event-popover-${e.deckCardId || e.id}`"
+            triggers="hover focus"
+            placement="top"
+          >
+            <p class="mb-0 small">{{ e.effectText }}</p>
+          </b-popover>
+        </div>
       </div>
     </div>
   </div>

@@ -91,6 +91,7 @@ export function applyMultiplayerGameServerResponses(
       "votingInProgress",
       "currentVoteStep",
       "heroOrPariah",
+      "voteOutcomeText",
     ]);
   };
 
@@ -208,4 +209,5 @@ export const DEFAULT_STATE: LiteGameClientState = {
     eventsDelta: 0,
     standardDecay: 0,
   },
+  voteOutcomeText: "",
 };

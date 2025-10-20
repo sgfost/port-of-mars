@@ -4,7 +4,7 @@
     :class="{ dim: event.expired, 'border-primary': event.inPlay, 'dim-slight': upcoming }"
   >
     <h4 :class="{ 'text-primary': event.inPlay }">{{ event.displayName }}</h4>
-    <p class="text-muted">
+    <p class="text-muted" v-if="showFlavorText">
       <small
         ><i>{{ event.flavorText }}</i></small
       >
@@ -21,6 +21,7 @@ import { EventCardData } from "@port-of-mars/shared/lite";
 @Component({})
 export default class EventCard extends Vue {
   @Prop() event!: EventCardData;
+  @Prop({ default: true }) showFlavorText!: boolean;
 
   get upcoming() {
     return !this.event.inPlay && !this.event.expired;

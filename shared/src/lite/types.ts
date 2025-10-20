@@ -158,4 +158,5 @@ export interface LiteGameClientState extends SoloGameClientState {
   heroOrPariah: "hero" | "pariah" | "";
   auditing: boolean;
   sandstormRoundsRemaining: number;
+  voteOutcomeText?: string;
 }

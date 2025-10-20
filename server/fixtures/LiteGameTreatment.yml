@@ -198,7 +198,7 @@ items:
     id: 20
     gameType: prolificInteractive
     isNumberOfRoundsKnown: true
-    isEventDeckKnown: true
+    isEventDeckKnown: false
     thresholdInformation: known
     isLowResSystemHealth: false
     numLifeAsUsualCardsOverride: 12
@@ -207,7 +207,7 @@ items:
     id: 21
     gameType: prolificInteractive
     isNumberOfRoundsKnown: true
-    isEventDeckKnown: true
+    isEventDeckKnown: false
     thresholdInformation: known
     isLowResSystemHealth: false
     numLifeAsUsualCardsOverride: 12
@@ -220,7 +220,7 @@ items:
     id: 22
     gameType: prolificInteractive
     isNumberOfRoundsKnown: true
-    isEventDeckKnown: true
+    isEventDeckKnown: false
     thresholdInformation: known
     isLowResSystemHealth: false
     numLifeAsUsualCardsOverride: 12

@@ -6,9 +6,9 @@ import { getRandomIntInclusive } from "@port-of-mars/server/util";
 import { ChatMessage, EventCard, Player, TreatmentParams, Vote } from "./state";
 import { LiteGameStatus, LiteGameBinaryVoteInterpretation } from "@port-of-mars/shared/lite";
 import { Role } from "@port-of-mars/shared/types";
-import { settings } from "@port-of-mars/server/settings";
+// import { settings } from "@port-of-mars/server/settings";
 
-const logger = settings.logging.getLogger(__filename);
+// const logger = settings.logging.getLogger(__filename);
 
 abstract class Cmd<Payload> extends Command<LiteGameRoom, Payload> {
   get defaultParams() {
@@ -367,9 +367,6 @@ export class ApplyOfferCardCmd extends BaseCardCmd {
         binaryVote ? "accept_greedy_offer" : "reject_greedy_offer"
       );
 
-      logger.fatal(`pointsEffect: ${this.card.pointsEffect}`);
-      logger.fatal(`resourcesEffect: ${this.card.resourcesEffect}`);
-      logger.fatal(`systemHealthEffect: ${this.card.systemHealthEffect}`);
       if (binaryVote === true) {
         await this.applyAndPersistVoteEffect(
           player,
@@ -377,6 +374,19 @@ export class ApplyOfferCardCmd extends BaseCardCmd {
           this.card.resourcesEffect,
           this.card.systemHealthEffect
         );
+      }
+      // audit: reveal choice
+      if (this.state.chatEnabled && this.state.auditing) {
+        const dateCreated = new Date();
+        const messageText = `${player.role} ${binaryVote ? "accepted" : "rejected"} the offer.`;
+        const chatMessage = new ChatMessage({
+          username: player.username,
+          role: "Auditor" as Role,
+          message: messageText,
+          dateCreated: dateCreated.getTime(),
+          round: this.state.round,
+        });
+        this.state.chatMessages.push(chatMessage);
       }
     }
 
@@ -489,10 +499,14 @@ export class ApplyCompulsivePhilanthropyCmd extends BaseCardCmd {
             }
           }
         }
+        this.state.voteOutcomeText = `The ${targetPlayer.role} was forced to invest ${resourcesInvested} time blocks into system health`;
       }
     }
 
     this.finishVoting();
+    // wait and clear outcome text
+    await new Promise(resolve => setTimeout(resolve, 4 * 1000));
+    this.state.voteOutcomeText = "";
     return this.finishCard();
   }
 }
@@ -612,8 +626,10 @@ export class ApplyHeroOrPariahStep2Cmd extends BaseCardCmd {
 
       if (shouldGainResources) {
         resourcesChange = 4;
+        this.state.voteOutcomeText = `The ${targetPlayer.role} gains 4 time blocks`;
       } else {
         resourcesChange = -targetPlayer.resources;
+        this.state.voteOutcomeText = `The ${targetPlayer.role} loses all time blocks`;
       }
 
       await this.applyAndPersistVoteEffect(
@@ -629,6 +645,9 @@ export class ApplyHeroOrPariahStep2Cmd extends BaseCardCmd {
     this.state.heroOrPariah = "";
 
     this.finishVoting();
+    // wait and clear outcome text
+    await new Promise(resolve => setTimeout(resolve, 4 * 1000));
+    this.state.voteOutcomeText = "";
     return this.finishCard();
   }
 }

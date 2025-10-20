@@ -23,8 +23,12 @@ import { Vue, Component, Prop } from "vue-property-decorator";
 export default class ThresholdInfo extends Vue {
   @Prop() state!: LiteGameClientState;
   @Prop() thresholdInformation!: "known" | "range";
+  @Prop({ default: true }) normalizeThresholds!: boolean;
 
   normalize(value: number): number {
+    if (!this.normalizeThresholds) {
+      return value;
+    }
     if (value === 0) {
       return 0;
     }
