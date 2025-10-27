@@ -48,8 +48,10 @@
             <Clock
               v-if="state.activeCardId < 0 && !state.isRoundReportInProgress"
               :timeRemaining="state.timeRemaining"
-              :size="2"
               :showBlank="state.activeCardId >= 0"
+              @extend="handleExtendTimer()"
+              :timeExtensionUsed="state.timeExtensionUsed"
+              :showExtendButton="!state.isRoundTransitioning"
             />
           </div>
           <div class="d-flex align-items-center">
@@ -199,7 +201,7 @@
                   helpText="Contribute time blocks to system health. Left over time blocks are earned as points."
                   buttonText="Invest"
                   :enableKeyboard="false"
-                  :shouldFlashEachRound="true"
+                  :shouldFlashEachRound="false"
                 />
               </div>
             </div>
@@ -254,7 +256,7 @@ import PlayerIndicators from "@port-of-mars/client/components/lite/PlayerIndicat
 import SegmentedBar from "@port-of-mars/client/components/lite/SegmentedBar.vue";
 import RoundReport from "@port-of-mars/client/components/lite/interactive/RoundReport.vue";
 import Investment from "@port-of-mars/client/components/lite/Investment.vue";
-import Clock from "@port-of-mars/client/components/lite/Clock.vue";
+import Clock from "@port-of-mars/client/components/lite/interactive/Clock.vue";
 import ThresholdInfo from "@port-of-mars/client/components/lite/ThresholdInfo.vue";
 import VFDNumberDisplay from "@port-of-mars/client/components/lite/VFDNumberDisplay.vue";
 import HealthGained from "@port-of-mars/client/components/lite/HealthGained.vue";
@@ -387,6 +389,10 @@ export default class Dashboard extends Vue {
       this.selectedBinaryVote = vote;
       this.submitVote();
     }
+  }
+
+  handleExtendTimer(seconds = 10) {
+    this.api.extendTimer();
   }
 
   handleRoleVote(role: Role) {

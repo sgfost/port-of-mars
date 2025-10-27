@@ -59,4 +59,11 @@ export class LiteGameRequestAPI {
     console.log("Sending vote message:", msg);
     this.send(msg);
   }
+
+  public extendTimer() {
+    const msg: LiteGameRequest = {
+      kind: "extend-timer",
+    } as any;
+    this.send(msg);
+  }
 }

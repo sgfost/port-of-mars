@@ -76,6 +76,7 @@ export class EventCard extends Schema {
   @type("int8") resourcesEffect = 0;
   @type("int8") systemHealthEffect = 0;
   @type("boolean") requiresVote = false;
+  @type("uint8") eventTimeoutOverride?: number;
 
   constructor(data: EventCardData) {
     super();
@@ -89,6 +90,9 @@ export class EventCard extends Schema {
     this.systemHealthEffect = data.systemHealthEffect;
     this.requiresVote = data.requiresVote || false;
     this.affectedRole = data.affectedRole;
+    if (data.eventTimeoutOverride && data.eventTimeoutOverride > 0) {
+      this.eventTimeoutOverride = data.eventTimeoutOverride;
+    }
   }
 
   get isMurphysLaw() {
@@ -175,6 +179,7 @@ export class LiteGameState extends Schema {
   @type("uint8") sandstormRoundsRemaining = 0;
 
   @type("string") voteOutcomeText = "";
+  @type("boolean") timeExtensionUsed = false;
 
   gameId = 0;
   userRoles: LiteRoleAssignment;
@@ -370,7 +375,7 @@ export class LiteGameState extends Schema {
       twoEventsThreshold: { min: 39, max: 39 }, // full game is 13 * numplayers
       threeEventsThreshold: { min: 21, max: 21 }, // full game is 7 * numplayers
       timeRemaining: 45,
-      eventTimeout: 8,
+      eventTimeout: 12,
       systemHealthMax: 60, // 3 * 20 matches the full game
       systemHealthWear: 15, // 3 * 5 matches the full game
       startingSystemHealth: 45, // (3 * 20) - (3 * 5)

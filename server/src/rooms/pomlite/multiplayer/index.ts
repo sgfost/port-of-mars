@@ -163,6 +163,13 @@ export class LiteGameRoom extends Room<LiteGameState> {
         this.handleVote(client, message);
       }
     );
+    this.onMessage("extend-timer", (client: Client) => {
+      // only allow once per round
+      if (this.state.timeExtensionUsed) return;
+      // extend remaining round time by 30 seconds
+      this.state.timeRemaining += 30;
+      this.state.timeExtensionUsed = true;
+    });
   }
 
   async handleChatMessage(client: Client, messageText: string) {

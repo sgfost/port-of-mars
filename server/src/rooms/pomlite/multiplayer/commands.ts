@@ -123,6 +123,7 @@ export class SetFirstRoundCmd extends CmdWithoutPayload {
     this.state.isRoundInitialized = true;
     this.state.auditing = false;
     this.state.sandstormRoundsRemaining = 0;
+    this.state.timeExtensionUsed = false;
 
     return [new SendHiddenParamsCmd()];
   }
@@ -318,6 +319,8 @@ abstract class BaseCardCmd extends Cmd<{ card: EventCard; playerSkipped: boolean
       this.state.activeCardId = nextRoundCard.deckCardId;
       return new StartEventTimerCmd();
     } else {
+      // after the last card, reset the time remaining to the baseline
+      this.state.timeRemaining = this.defaultParams.timeRemaining;
       this.state.canInvest = true;
       this.state.activeCardId = -1;
     }
@@ -558,12 +561,13 @@ export class ApplyHeroOrPariahStep1Cmd extends BaseCardCmd {
     this.state.currentVoteStep = 2;
 
     // reset and start new timer for step 2 so clients show a fresh progress bar
-    this.state.eventTimeTotal = this.defaultParams.eventTimeout;
-    this.state.eventTimeRemaining = this.defaultParams.eventTimeout;
+    const step2Timeout = this.card.eventTimeoutOverride || this.defaultParams.eventTimeout;
+    this.state.eventTimeTotal = step2Timeout;
+    this.state.eventTimeRemaining = step2Timeout;
     this.room.eventTimeout?.clear();
     this.room.eventTimeout = this.clock.setTimeout(() => {
       this.room.dispatcher.dispatch(new ApplyCardCmd().setPayload({ playerSkipped: true }));
-    }, this.defaultParams.eventTimeout * 1000);
+    }, step2Timeout * 1000);
 
     return; // don't finish the card yet, wait for step 2
   }
@@ -661,8 +665,8 @@ export class StartEventTimerCmd extends CmdWithoutPayload {
       this.state.heroOrPariah = "";
     }
     // initialize and start the event timer
-    let eventTimeout = this.defaultParams.eventTimeout;
-    if (this.state.activeCard?.requiresVote) eventTimeout *= 2;
+    const eventTimeout =
+      this.state.activeCard?.eventTimeoutOverride || this.defaultParams.eventTimeout;
     this.state.eventTimeTotal = eventTimeout;
     this.state.eventTimeRemaining = eventTimeout;
     this.room.eventTimeout?.clear();
@@ -681,7 +685,14 @@ export class DrawCardsCmd extends CmdWithoutPayload {
       drawCount += 2;
       this.drawRoundCards(2);
     }
-    this.state.timeRemaining += this.defaultParams.eventTimeout * drawCount;
+    // recompute added round time as sum of per-card durations so investment phase baseline holds
+    let addedTime = 0;
+    for (const card of this.state.roundEventCards) {
+      let t = card.eventTimeoutOverride || this.defaultParams.eventTimeout;
+      if (card.requiresVote) t *= 2;
+      addedTime += t;
+    }
+    this.state.timeRemaining += addedTime;
     const nextRoundCard = this.state.nextRoundCard;
     if (nextRoundCard) {
       this.state.activeCardId = nextRoundCard.deckCardId;
@@ -861,6 +872,7 @@ export class SetNextRoundCmd extends CmdWithoutPayload {
     });
 
     this.state.timeRemaining = defaults.timeRemaining;
+    this.state.timeExtensionUsed = false;
 
     this.state.auditing = false;
     if (this.state.sandstormRoundsRemaining > 0) {

@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex flex-row m-0 p-0">
+  <div class="d-flex flex-row m-0 p-0 pl-2" :class="{ 'border border-primary rounded': isSelf }">
     <div cols="3" class="h-100 w-100">
       <div
         :style="indicatorStyle"

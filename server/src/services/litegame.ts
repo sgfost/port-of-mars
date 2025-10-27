@@ -447,6 +447,7 @@ export class LiteGameService extends BaseService {
           systemHealthEffect: card.systemHealthMultiplier * roll,
           requiresVote: card.requiresVote,
           affectedRole: card.affectedRole,
+          eventTimeoutOverride: card.eventTimeoutOverride,
         });
       }
     }

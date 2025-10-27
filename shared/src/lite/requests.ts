@@ -33,4 +33,14 @@ export interface SendChatMessage {
   message: string;
 }
 
-export type LiteGameRequest = EventContinue | Invest | PlayerReady | SubmitVote | SendChatMessage;
+export interface ExtendTimerRequest {
+  kind: "extend-timer";
+}
+
+export type LiteGameRequest =
+  | EventContinue
+  | Invest
+  | PlayerReady
+  | SubmitVote
+  | SendChatMessage
+  | ExtendTimerRequest;

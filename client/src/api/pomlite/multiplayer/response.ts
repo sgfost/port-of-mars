@@ -92,6 +92,7 @@ export function applyMultiplayerGameServerResponses(
       "currentVoteStep",
       "heroOrPariah",
       "voteOutcomeText",
+      "timeExtensionUsed",
     ]);
   };
 

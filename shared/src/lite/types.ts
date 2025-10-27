@@ -14,6 +14,7 @@ export interface EventCardData {
   systemHealthEffect: number;
   requiresVote?: boolean;
   affectedRole?: Role;
+  eventTimeoutOverride?: number;
 }
 
 export interface HiddenParams {
@@ -159,4 +160,5 @@ export interface LiteGameClientState extends SoloGameClientState {
   auditing: boolean;
   sandstormRoundsRemaining: number;
   voteOutcomeText?: string;
+  timeExtensionUsed?: boolean;
 }
