@@ -817,6 +817,8 @@ export class MultiplayerStudyService extends BaseStudyService {
       return;
     }
     const header = Object.keys(formattedPlayers[0]).map(name => ({ id: name, title: name }));
+    // sort by primary key: playerId
+    formattedPlayers.sort((a: any, b: any) => (a.playerId ?? 0) - (b.playerId ?? 0));
     const writer = createObjectCsvWriter({ path, header });
     await writer.writeRecords(formattedPlayers);
     logger.info(
@@ -1029,5 +1031,117 @@ export class InteractiveStudyService extends BaseStudyService {
       if (p.interactivePlayer?.game) gameIds.push(p.interactivePlayer.game.id);
     }
     return gameIds;
+  }
+
+  async exportProlificStudyGamesCsv(path: string, studyId: string) {
+    /**
+     * export a flat CSV of unique games associated with the specified interactive study
+     *
+     * gameId, gameType, status, dateCreated, treatment details, numPlayers
+     */
+    const gameIds = await this.getGameIdsForStudyId(studyId);
+    if (gameIds.length === 0) {
+      logger.warn(`No games found for interactive study ${studyId} to export to games.csv.`);
+      return;
+    }
+
+    const query = this.em
+      .getRepository(LiteGame)
+      .createQueryBuilder("game")
+      .leftJoinAndSelect("game.treatment", "treatment")
+      .leftJoinAndSelect("game.players", "players")
+      .where("game.id IN (:...gameIds)", { gameIds });
+
+    const games = await query.getMany();
+    const formattedGames: Array<Record<string, any>> = [];
+
+    for (const game of games) {
+      const treatment = game.treatment;
+      formattedGames.push({
+        gameId: game.id,
+        gameType: game.type,
+        studyId,
+        status: game.status,
+        maxRound: game.maxRound,
+        numPlayers: game.players.length,
+        treatmentId: treatment.id,
+        twoEventsThreshold: game.twoEventsThreshold,
+        threeEventsThreshold: game.threeEventsThreshold,
+        shortInstructions: treatment.instructions?.includes("planning")
+          ? "planning"
+          : treatment.instructions?.includes("positive")
+          ? "positive"
+          : "",
+        instructions: treatment.instructions,
+        dateCreated: game.dateCreated.toISOString(),
+      });
+    }
+
+    if (formattedGames.length === 0) {
+      logger.warn(`No game data to format for interactive study ${studyId} in games.csv.`);
+      return;
+    }
+    const header = Object.keys(formattedGames[0]).map(name => ({ id: name, title: name }));
+    const writer = createObjectCsvWriter({ path, header });
+    await writer.writeRecords(formattedGames);
+    logger.info(
+      `Interactive study game data for study ${studyId} exported successfully to ${path}`
+    );
+  }
+
+  async exportProlificStudyPlayersCsv(path: string, studyId: string) {
+    /**
+     * export a flat CSV of player participations in games for the specified interactive study
+     *
+     * playerId, userId, username, prolificId, gameId, role, points, abandonedGame, roomId
+     */
+    const query = this.em
+      .getRepository(ProlificInteractiveStudyParticipant)
+      .createQueryBuilder("participant")
+      .leftJoinAndSelect("participant.user", "user")
+      .leftJoinAndSelect("participant.study", "study")
+      .leftJoinAndSelect("participant.interactivePlayer", "player")
+      .leftJoinAndSelect("player.game", "game")
+      .where("study.studyId = :studyId", { studyId });
+
+    const participants = await query.getMany();
+    const formattedPlayers: Array<Record<string, any>> = [];
+
+    for (const participant of participants) {
+      const user = participant.user;
+      const currentStudyId = participant.study.studyId;
+      const prolificId = participant.prolificId;
+
+      const player = participant.interactivePlayer;
+      if (player && player.game) {
+        formattedPlayers.push({
+          prolificId: prolificId,
+          userId: user.id,
+          username: user.username,
+          playerId: player.id,
+          gameId: player.game.id,
+          gameType: player.game.type,
+          studyId: currentStudyId,
+          role: player.role,
+          points: player.points,
+          abandonedGame: participant.abandonedGame,
+          roomId: participant.roomId,
+          dateCreated: player.dateCreated.toISOString(),
+        });
+      }
+    }
+
+    if (formattedPlayers.length === 0) {
+      logger.warn(`No player data to format for interactive study ${studyId} in players.csv.`);
+      return;
+    }
+    const header = Object.keys(formattedPlayers[0]).map(name => ({ id: name, title: name }));
+    // sort by primary key: playerId
+    formattedPlayers.sort((a: any, b: any) => (a.playerId ?? 0) - (b.playerId ?? 0));
+    const writer = createObjectCsvWriter({ path, header });
+    await writer.writeRecords(formattedPlayers);
+    logger.info(
+      `Interactive study player data for study ${studyId} exported successfully to ${path}`
+    );
   }
 }
