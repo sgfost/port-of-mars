@@ -113,7 +113,10 @@ export class SetFirstRoundCmd extends CmdWithoutPayload {
     const defaults = this.defaultParams;
     this.state.round = 1;
     this.state.systemHealth = defaults.startingSystemHealth;
-    this.state.timeRemaining = defaults.timeRemaining;
+    this.state.timeRemaining =
+      this.state.type === "prolificInteractive"
+        ? defaults.timeRemaining * 2
+        : defaults.timeRemaining;
     this.state.players.forEach(player => {
       player.resources = defaults.resources;
     });
