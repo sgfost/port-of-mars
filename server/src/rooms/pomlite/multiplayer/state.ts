@@ -374,7 +374,7 @@ export class LiteGameState extends Schema {
       reportDuration: 10,
       twoEventsThreshold: { min: 39, max: 39 }, // full game is 13 * numplayers
       threeEventsThreshold: { min: 21, max: 21 }, // full game is 7 * numplayers
-      timeRemaining: 45,
+      timeRemaining: 90,
       eventTimeout: 12,
       systemHealthMax: 60, // 3 * 20 matches the full game
       systemHealthWear: 15, // 3 * 5 matches the full game
