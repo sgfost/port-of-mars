@@ -116,6 +116,7 @@ export class SetFirstRoundCmd extends CmdWithoutPayload {
     this.state.timeRemaining = defaults.timeRemaining;
     this.state.players.forEach(player => {
       player.resources = defaults.resources;
+      player.systemHealthContribution = 0;
     });
     this.state.updateRoundInitialValues();
     this.state.isRoundTransitioning = false;
@@ -319,10 +320,20 @@ abstract class BaseCardCmd extends Cmd<{ card: EventCard; playerSkipped: boolean
       this.state.activeCardId = nextRoundCard.deckCardId;
       return new StartEventTimerCmd();
     } else {
-      // after the last card, reset the time remaining to the baseline
+      // done with the last card, prepare for investment phase
+      // reset to the intended time for investment
       this.state.timeRemaining = this.defaultParams.timeRemaining;
       this.state.canInvest = true;
       this.state.activeCardId = -1;
+      // if a player has 0 resources (e.g., from compulsive philanthropy),
+      // auto-invest 0 for that player so they don't have to click
+      this.state.players.forEach(player => {
+        if (player.resources === 0 && player.pendingInvestment < 0) {
+          this.room.dispatcher.dispatch(
+            new PlayerInvestCmd().setPayload({ systemHealthInvestment: 0, player })
+          );
+        }
+      });
     }
   }
 }
@@ -733,10 +744,17 @@ export class PlayerInvestCmd extends Cmd<{
     player.hasInvested = !clockRanOut;
     player.pendingInvestment = systemHealthInvestment;
 
+    // contributions are possible through events (compulsive philanthropy)
+    // so add to it
+    player.systemHealthContribution = Math.max(
+      0,
+      (player.systemHealthContribution || 0) + systemHealthInvestment
+    );
+
     // audit: reveal investments via system chat message
     if (this.state.chatEnabled && this.state.auditing) {
       const dateCreated = new Date();
-      const messageText = `${player.role} contributed ${systemHealthInvestment} system health.`;
+      const messageText = `${player.role} contributed ${player.systemHealthContribution} system health.`;
       const chatMessage = new ChatMessage({
         username: player.username,
         role: "Auditor" as Role,
@@ -795,6 +813,7 @@ export class ProcessRoundCmd extends CmdWithoutPayload {
   async execute() {
     let totalSystemHealthInvestment = 0;
     this.state.players.forEach(player => {
+      totalSystemHealthInvestment += player.systemHealthContribution;
       if (player.pendingInvestment >= 0) {
         // if the investment was caused by a timeout, the player invests nothing
         // and gets no points
@@ -802,12 +821,8 @@ export class ProcessRoundCmd extends CmdWithoutPayload {
         if (player.hasInvested) {
           surplus = player.resources - player.pendingInvestment;
         }
-        totalSystemHealthInvestment += player.pendingInvestment;
-        player.systemHealthContribution = player.pendingInvestment;
         player.points += surplus;
         player.pointsEarned = surplus;
-      } else {
-        player.systemHealthContribution = 0;
       }
     });
     this.state.systemHealth = Math.min(
@@ -896,6 +911,11 @@ export class SetNextRoundCmd extends CmdWithoutPayload {
       // now clear the report so it's ready for the next round
       this.state.lastRoundReport.eventsDelta = 0;
     }
+
+    // reset contributions after the report is shown
+    this.state.players.forEach(player => {
+      player.systemHealthContribution = 0;
+    });
 
     if (this.state.upcomingEventCards.length > 0) {
       return new DrawCardsCmd();
